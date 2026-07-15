@@ -2536,14 +2536,24 @@ function openNameEditor(i) {
 }
 
 function bindRowSelection(cell, i) {
-  cell.addEventListener('dblclick', event => {
-    event.stopPropagation();
+  const toggleRowSelection = event => {
+    if (event) event.stopPropagation();
     const row = cell.parentElement;
     if (!row) return;
     const rowId = row.dataset.rowId || '';
     const willSelect = selectedRowId !== rowId;
     selectedRowId = willSelect ? rowId : '';
     applySelectedRowState();
+  };
+  cell.addEventListener('dblclick', toggleRowSelection);
+  cell.addEventListener('pointerup', event => {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+    const now = Date.now();
+    const lastTap = Number(cell.dataset.lastTapAt || '0');
+    cell.dataset.lastTapAt = String(now);
+    if (now - lastTap > 320) return;
+    event.preventDefault();
+    toggleRowSelection(event);
   });
   cell.addEventListener('pointerdown', event => {
     const row = cell.parentElement;
