@@ -355,8 +355,28 @@ th.h-kosin .label-small {
 }
 tbody tr:nth-child(even) { background: #f8fcff; }
 tbody tr:nth-child(odd) { background: white; }
-tbody tr { transition: background-color 0.14s ease, box-shadow 0.18s ease, transform 0.18s ease, opacity 0.18s ease; }
+tbody tr { transition: background-color 0.12s ease, box-shadow 0.12s ease, transform 0.08s ease, opacity 0.12s ease; }
 tbody tr.done-row { background: #f0fdf4 !important; }
+tbody tr.row-selected {
+  background: #dcfce7 !important;
+  box-shadow: inset 0 0 0 2px #65b842;
+}
+tbody tr.row-dragging {
+  position: relative;
+  z-index: 8;
+  box-shadow: 0 14px 32px rgba(45, 122, 26, 0.22), inset 0 0 0 2px #65b842;
+  opacity: 0.96;
+  will-change: transform;
+}
+tbody tr.row-drop-target {
+  box-shadow: inset 0 3px 0 #65b842;
+}
+tbody tr.row-drop-target.drop-before {
+  box-shadow: inset 0 3px 0 #65b842;
+}
+tbody tr.row-drop-target.drop-after {
+  box-shadow: inset 0 -3px 0 #65b842;
+}
 tbody tr.blank-insert-target {
   background: #fff7d6 !important;
   box-shadow: inset 0 3px 0 #f59e0b;
@@ -1154,6 +1174,16 @@ let columnDragTargetKey = '';
 let columnDragTargetAfter = false;
 let columnDragStartX = 0;
 let columnDragPointerOffsetX = 0;
+let selectedRowId = '';
+let rowDragPointerId = null;
+let rowDragHoldTimer = null;
+let rowDragActive = false;
+let rowDragRowId = '';
+let rowDragRowEl = null;
+let rowDragTargetRowId = '';
+let rowDragTargetAfter = false;
+let rowDragStartY = 0;
+let rowDragPointerOffsetY = 0;
 
 function removeUnusedTaskHeaders() {
   const headerRow = document.querySelector('thead tr');
@@ -1201,6 +1231,17 @@ function saveColumnOrder() {
 function saveOrderMode(mode) {
   orderMode = mode === 'custom' ? 'custom' : 'name';
   localStorage.setItem(ORDER_MODE_KEY, orderMode);
+}
+
+function clearRowSelection() {
+  selectedRowId = '';
+  document.querySelectorAll('#tbody tr.row-selected').forEach(tr => tr.classList.remove('row-selected'));
+}
+
+function applySelectedRowState() {
+  document.querySelectorAll('#tbody tr').forEach(tr => {
+    tr.classList.toggle('row-selected', !!selectedRowId && tr.dataset.rowId === selectedRowId);
+  });
 }
 
 function saveAll(all) {
@@ -2401,6 +2442,126 @@ function openNameEditor(i) {
 }
 
 function bindRowSelection(cell, i) {
+  cell.addEventListener('dblclick', event => {
+    event.stopPropagation();
+    const row = cell.parentElement;
+    if (!row) return;
+    const rowId = row.dataset.rowId || '';
+    const willSelect = selectedRowId !== rowId;
+    selectedRowId = willSelect ? rowId : '';
+    applySelectedRowState();
+  });
+  cell.addEventListener('pointerdown', event => {
+    const row = cell.parentElement;
+    const rowId = row?.dataset.rowId || '';
+    if (!row || !rowId || selectedRowId !== rowId) return;
+    event.preventDefault();
+    startRowHold(event, row);
+  });
+}
+
+function startRowHold(event, row) {
+  clearTimeout(rowDragHoldTimer);
+  rowDragPointerId = event.pointerId;
+  rowDragRowEl = row;
+  rowDragRowId = row.dataset.rowId || '';
+  rowDragTargetRowId = '';
+  rowDragTargetAfter = false;
+  rowDragStartY = event.clientY;
+  const rect = row.getBoundingClientRect();
+  rowDragPointerOffsetY = event.clientY - rect.top;
+  rowDragHoldTimer = setTimeout(() => {
+    if (orderMode !== 'custom') saveOrderMode('custom');
+    rowDragActive = true;
+    if (rowDragRowEl) rowDragRowEl.classList.add('row-dragging');
+  }, 140);
+}
+
+function clearRowDropMarkers() {
+  document.querySelectorAll('#tbody tr.row-drop-target').forEach(tr => {
+    tr.classList.remove('row-drop-target', 'drop-before', 'drop-after');
+  });
+}
+
+function updateRowDropMarker(targetRowId, insertAfter) {
+  clearRowDropMarkers();
+  if (!targetRowId || targetRowId === rowDragRowId) return;
+  const row = document.querySelector(`#tbody tr[data-row-id="${CSS.escape(targetRowId)}"]`);
+  if (!row) return;
+  row.classList.add('row-drop-target', insertAfter ? 'drop-after' : 'drop-before');
+}
+
+function moveHeldRow(event) {
+  if (rowDragPointerId !== event.pointerId || !rowDragRowEl) return;
+  if (!rowDragActive) return;
+  event.preventDefault();
+  const rect = rowDragRowEl.getBoundingClientRect();
+  const deltaY = event.clientY - rect.top - rowDragPointerOffsetY;
+  rowDragRowEl.style.transform = `translateY(${Math.round(deltaY)}px) scale(1.01)`;
+  const rows = Array.from(document.querySelectorAll('#tbody tr')).filter(tr => tr.dataset.rowId && tr.dataset.rowId !== rowDragRowId);
+  let nextTargetId = '';
+  let nextAfter = false;
+  for (const row of rows) {
+    const rowRect = row.getBoundingClientRect();
+    const rowCenter = rowRect.top + (rowRect.height / 2);
+    if (event.clientY < rowCenter) {
+      nextTargetId = row.dataset.rowId || '';
+      nextAfter = false;
+      break;
+    }
+    nextTargetId = row.dataset.rowId || '';
+    nextAfter = true;
+  }
+  rowDragTargetRowId = nextTargetId;
+  rowDragTargetAfter = nextAfter;
+  updateRowDropMarker(nextTargetId, nextAfter);
+}
+
+function commitRowReorder() {
+  if (!rowDragRowId || !rowDragTargetRowId || rowDragRowId === rowDragTargetRowId) return false;
+  const sourceIndex = currentData.findIndex(item => item.rowId === rowDragRowId);
+  const targetIndex = currentData.findIndex(item => item.rowId === rowDragTargetRowId);
+  if (sourceIndex < 0 || targetIndex < 0) return false;
+  const nextData = [...currentData];
+  const [moved] = nextData.splice(sourceIndex, 1);
+  let insertIndex = nextData.findIndex(item => item.rowId === rowDragTargetRowId);
+  if (insertIndex < 0) return false;
+  if (rowDragTargetAfter) insertIndex += 1;
+  nextData.splice(insertIndex, 0, moved);
+  nextData.forEach((item, index) => {
+    item.manualOrder = item.noNumber ? Number.MAX_SAFE_INTEGER + index : index;
+  });
+  currentData = nextData;
+  saveMonthData(curYear, curMonth, currentData);
+  return true;
+}
+
+function endRowHold(event) {
+  if (event && rowDragPointerId !== null && event.pointerId !== rowDragPointerId) return;
+  clearTimeout(rowDragHoldTimer);
+  const shouldCommit = rowDragActive;
+  if (rowDragRowEl) {
+    rowDragRowEl.classList.remove('row-dragging');
+    rowDragRowEl.style.transform = '';
+  }
+  clearRowDropMarkers();
+  if (shouldCommit) {
+    commitRowReorder();
+    rowDragActive = false;
+    rowDragPointerId = null;
+    rowDragRowEl = null;
+    rowDragRowId = '';
+    rowDragTargetRowId = '';
+    rowDragTargetAfter = false;
+    render();
+    return;
+  }
+  rowDragActive = false;
+  rowDragPointerId = null;
+  rowDragRowEl = null;
+  rowDragRowId = '';
+  rowDragTargetRowId = '';
+  rowDragTargetAfter = false;
 }
 
 function saveNameEditor() {
@@ -2696,7 +2857,9 @@ function render() {
 
     const tr = document.createElement('tr');
     tr.dataset.sourceIndex = String(originalIndex);
+    tr.dataset.rowId = item.rowId || '';
     if (CHK.every(key => item[key] === 1)) tr.classList.add('done-row');
+    if (selectedRowId && selectedRowId === (item.rowId || '')) tr.classList.add('row-selected');
     tr.addEventListener('click', event => {
       if (event.target.closest('td')) return;
     });
@@ -2848,6 +3011,9 @@ function render() {
 document.addEventListener('pointermove', moveHeldColumn, { passive: false });
 document.addEventListener('pointerup', endColumnHold);
 document.addEventListener('pointercancel', endColumnHold);
+document.addEventListener('pointermove', moveHeldRow, { passive: false });
+document.addEventListener('pointerup', endRowHold);
+document.addEventListener('pointercancel', endRowHold);
 document.getElementById('import-data-input')?.addEventListener('change', event => {
   importLocalDataFromFile(event.target.files?.[0]);
 });
