@@ -245,7 +245,7 @@ th.h-no {
   padding: 0;
 }
 th.h-name {
-  width: 58px;
+  width: 64px;
   font-size: 10px;
   color: #2d7a1a;
   font-weight: 700;
@@ -256,8 +256,8 @@ th.h-name {
 th.h-kosin { width: 40px; font-size: 8px; color: #2d7a1a; font-weight: 700; text-align: center; border-right: 2px solid #86d46a; }
 th.h-rot { width: 22px; }
 th[data-col-key="level"] { width: 28px; vertical-align: middle; padding: 0; }
-th.h-rot-date { width: 44px; vertical-align: middle; padding: 0; }
-th.h-visit { width: 26px; }
+th.h-rot-date { width: 50px; vertical-align: middle; padding: 0; }
+th.h-visit { width: 28px; }
 th.h-seho { width: 34px; }
 th.h-biko { width: 168px; font-size: 8px; color: #2d7a1a; font-weight: 700; text-align: center; padding-left: 0; border-left: 2px solid #86d46a; min-width: 168px; }
 th.col-movable { cursor: pointer; }
@@ -332,7 +332,7 @@ td.td-name {
   text-align: center;
   padding: 0;
   color: #1a4d0e;
-  width: 58px;
+  width: 64px;
   cursor: pointer;
   overflow: hidden;
   vertical-align: middle;
@@ -379,7 +379,7 @@ td.td-kosin {
   line-height: 1.25;
   border-right: 2px solid #b3e89a;
 }
-td.td-date { font-size: 9px; font-weight: 600; color: #1a4d0e; padding: 0 1px; width: 44px; white-space: nowrap; }
+td.td-date { font-size: 9px; font-weight: 600; color: #1a4d0e; padding: 0 1px; width: 50px; white-space: nowrap; }
 td.td-date.expiring { color: #dc2626; font-weight: 700; }
 td.td-date.expiring-done { color: #b8c0b3; font-weight: 600; }
 td.td-date.plan-long-current { color: #dc2626; font-weight: 700; }
@@ -387,7 +387,7 @@ td.td-date.plan-current { color: #dc2626; font-weight: 700; }
 td.td-lv { font-size: 11px; font-weight: 700; color: #2d7a1a; width: 28px; }
 td.td-lv.is-clickable { cursor: pointer; }
 td.td-visit {
-  width: 44px;
+  width: 28px;
   outline: none;
   padding: 2px 1px 3px;
   cursor: pointer;
@@ -450,7 +450,7 @@ td.td-visit.is-selected {
 td.td-cc { cursor: pointer; width: 34px; user-select: none; }
 td.td-seho { width: 46px; cursor: pointer; padding: 2px 2px; }
 td.td-biko {
-  text-align: center;
+  text-align: left;
   display: table-cell;
   vertical-align: middle;
   padding: 0;
@@ -789,16 +789,16 @@ td.td-biko {
 @media (max-width: 1024px) {
   table { min-width: 800px; }
   th.h-no { width: 28px; }
-  th.h-name { width: 54px; padding-left: 0; }
+  th.h-name { width: 60px; padding-left: 0; }
   th.h-kosin { width: 36px; }
   th.h-rot { width: 20px; }
-  th.h-rot-date { width: 40px; }
-  th.h-visit { width: 24px; }
+  th.h-rot-date { width: 46px; }
+  th.h-visit { width: 26px; }
   th.h-seho { width: 32px; }
   th[data-col-key="level"] { width: 26px; }
   th.h-biko { min-width: 150px; width: 150px; padding-left: 0; }
   td.td-no { width: 28px; }
-  td.td-name { width: 54px; padding: 0; }
+  td.td-name { width: 60px; padding: 0; }
   td.td-kosin { width: 36px; font-size: 8px; }
   td.td-lv { min-width: 26px; }
   td.td-biko { min-width: 150px; padding: 0; font-size: 9px; }
@@ -1053,8 +1053,8 @@ function newClientData(base) {
 function parseVisitState(base) {
   const raw = String(base.visit || '').trim();
   return {
-    visitDate: base.visitDate || (/^\d{1,2}譌･$/.test(raw) ? raw : ''),
-    visitTag1: base.visitTag1 || (Boolean(base.visitTel) || raw === 'TEL' || raw === '髮ｻ隧ｱ' ? 'TEL' : Boolean(base.visitNyuin) || raw === '蜈･髯｢荳ｭ' ? '蜈･髯｢荳ｭ' : ''),
+    visitDate: base.visitDate || (/^\d{1,2}日$/.test(raw) ? raw : ''),
+    visitTag1: base.visitTag1 || (Boolean(base.visitTel) || raw === 'TEL' || raw === 'TEL' ? 'TEL' : Boolean(base.visitNyuin) || raw === '入院中' ? '入院中' : ''),
     visitTag2: base.visitTag2 || ''
   };
 }
@@ -1082,7 +1082,7 @@ const nameCollator = new Intl.Collator('ja', { sensitivity: 'base', numeric: tru
 const NAME_YOMI = {};
 const EXPORT_SCHEMA_VERSION = 1;
 let allDateReiwa = true;
-const visitChoices = ['TEL', '蜈･髯｢荳ｭ'];
+const visitChoices = ['TEL', '入院中'];
 const levelChoices = ['支1', '支2', '1', '2', '3', '4', '5'];
 
 let currentData = [];
@@ -1854,7 +1854,7 @@ function renderVisitCalendar() {
   const selectedRaw = String(currentData[modalIndex][datePickerField] || '');
   let selectedDay = null;
   if (datePickerField === 'visitDate' || datePickerField === 'meetingDate') {
-    const match = selectedRaw.match(/^(\d{1,2})譌･$/);
+    const match = selectedRaw.match(/^(\d{1,2})日$/);
     selectedDay = match ? parseInt(match[1], 10) : null;
   } else {
     const parsed = parseAnyDate(selectedRaw);
@@ -1885,7 +1885,7 @@ function renderVisitCalendar() {
           openVisit(modalIndex);
           return;
         }
-        setVisitDate(`${day}譌･`);
+        setVisitDate(`${day}日`);
         return;
       }
       if (datePickerField === 'meetingDate') {
@@ -1896,7 +1896,7 @@ function renderVisitCalendar() {
           openMeeting(modalIndex);
           return;
         }
-        currentData[modalIndex].meetingDate = `${day}譌･`;
+        currentData[modalIndex].meetingDate = `${day}日`;
         saveMonthData(curYear, curMonth, currentData);
         render();
         openMeeting(modalIndex);
