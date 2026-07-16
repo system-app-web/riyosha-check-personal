@@ -67,6 +67,19 @@ input, textarea, select, option {
   line-height: 1.1;
   padding-left: 0;
 }
+.topbar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+.topbar-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
 .topbar-main {
   display: flex;
   align-items: center;
@@ -78,7 +91,7 @@ input, textarea, select, option {
 }
 .topbar-main::-webkit-scrollbar { height: 6px; }
 .topbar-main::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.28); border-radius: 999px; }
-.month-nav { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+.month-nav { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; margin-left: auto; }
 .mbtn {
   background: rgba(255,255,255,0.15);
   border: none;
@@ -100,6 +113,9 @@ input, textarea, select, option {
   min-width: max-content;
   overflow: visible;
 }
+.stats.header-stats {
+  min-width: 0;
+}
 .stat {
   display: flex;
   align-items: center;
@@ -116,6 +132,13 @@ input, textarea, select, option {
 .stat-num.y { color: #fcd34d; }
 .stat-label { font-size: 11px; color: #f8fff4; font-weight: 800; }
 .top-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.topbar-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  min-width: max-content;
+}
 .top-add-btn {
   height: 28px;
   padding: 0 10px;
@@ -990,11 +1013,22 @@ select.modal-input {
 </head>
 <body>
 <div class="topbar">
-  <div class="app-name">利用者チェック表</div>
+  <div class="topbar-head">
+    <div class="topbar-title-group">
+      <div class="app-name">利用者チェック表</div>
+      <div class="stats header-stats">
+        <div class="stat"><div class="stat-num" id="s-total">0</div><div class="stat-label">総数</div></div>
+      </div>
+    </div>
+    <div class="month-nav">
+      <button class="mbtn" onclick="changeMonth(-1)">‹</button>
+      <span class="mlabel" id="month-label"></span>
+      <button class="mbtn" onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
   <div class="topbar-divider"></div>
   <div class="topbar-main">
-  <div class="stats">
-    <div class="stat"><div class="stat-num" id="s-total">0</div><div class="stat-label">総数</div></div>
+  <div class="topbar-controls">
     <button class="top-add-btn primary" onclick="openAddClient()"><span class="top-add-btn-label">利用者追加</span></button>
     <div class="date-toggle-group" aria-label="日付表示切替">
       <button class="date-toggle-btn" id="date-toggle-wareki" onclick="setDateDisplayMode(true)">和暦</button>
@@ -1007,14 +1041,9 @@ select.modal-input {
     <button class="top-add-btn alt" onclick="openAddColumnModal()">項目追加</button>
     <button class="top-add-btn alt" id="delete-column-btn" onclick="toggleDeleteColumnMode()">項目削除</button>
   </div>
-  <div class="month-nav">
-    <div class="month-side-actions">
-      <button class="utility-btn backup" onclick="exportLocalData()">バックアップ</button>
-      <button class="utility-btn import" onclick="triggerImportLocalData()">データ挿入</button>
-    </div>
-    <button class="mbtn" onclick="changeMonth(-1)">‹</button>
-    <span class="mlabel" id="month-label"></span>
-    <button class="mbtn" onclick="changeMonth(1)">›</button>
+  <div class="month-side-actions">
+    <button class="utility-btn backup" onclick="exportLocalData()">バックアップ</button>
+    <button class="utility-btn import" onclick="triggerImportLocalData()">データ挿入</button>
   </div>
   </div>
 </div>
