@@ -472,7 +472,7 @@ th.h-name {
 th.h-kosin { width: 40px; font-size: 8px; color: #2d7a1a; font-weight: 700; text-align: center; border-right: 2px solid #86d46a; vertical-align: middle; padding-top: 0; padding-bottom: 0; }
 th.h-rot { width: 28px; }
 th[data-col-key="level"] { width: 28px; vertical-align: middle; padding: 0; }
-th.h-rot-date { width: 50px; vertical-align: middle; padding: 0; }
+th.h-rot-date { width: 56px; vertical-align: middle; padding: 0; }
 th.h-visit { width: 34px; }
 th.h-seho { width: 34px; }
 th[data-col-key="monita"],
@@ -630,7 +630,7 @@ td.td-kosin {
   line-height: 1.25;
   border-right: 2px solid #b3e89a;
 }
-td.td-date { font-size: 9px; font-weight: 600; color: #1a4d0e; padding: 0 1px; width: 50px; white-space: nowrap; }
+td.td-date { font-size: 9px; font-weight: 600; color: #1a4d0e; padding: 0 1px; width: 56px; white-space: nowrap; }
 td.td-date.expiring { color: #dc2626; font-weight: 700; }
 td.td-date.expiring-done { color: #b8c0b3; font-weight: 600; }
 td.td-date.plan-long-current { color: #dc2626; font-weight: 700; }
@@ -1062,7 +1062,7 @@ td.td-biko {
   th.h-name { width: 60px; padding-left: 0; }
   th.h-kosin { width: 36px; }
   th.h-rot { width: 26px; }
-  th.h-rot-date { width: 46px; }
+  th.h-rot-date { width: 52px; }
   th.h-visit { width: 32px; }
   th.h-seho { width: 32px; }
   th[data-col-key="monita"],
@@ -1076,6 +1076,7 @@ td.td-biko {
   td.td-no { width: 28px; }
   td.td-name { width: 60px; padding: 0; }
   td.td-kosin { width: 36px; font-size: 8px; }
+  td.td-date { width: 52px; }
   td.td-lv { min-width: 26px; }
   td.td-biko { min-width: 150px; padding: 0; font-size: 9px; }
   .circle { width: 22px; height: 22px; font-size: 11px; }
@@ -1234,8 +1235,8 @@ select.modal-input {
         <th class="h-kosin"><span class="label-small">更新申請等</span><br>メモ</th>
         <th class="h-rot h-rot-date col-movable" data-col-key="yuko"><span class="inner">有効期間</span></th>
         <th class="h-rot col-movable" data-col-key="level"><span class="inner">介護度</span></th>
-        <th class="h-rot h-rot-date col-movable" data-col-key="planL"><span class="inner">長期</span></th>
-        <th class="h-rot h-rot-date col-movable" data-col-key="planS"><span class="inner">短期</span></th>
+        <th class="h-rot h-rot-date col-movable" data-col-key="planL"><span class="inner">長期目標</span></th>
+        <th class="h-rot h-rot-date col-movable" data-col-key="planS"><span class="inner">短期目標</span></th>
         <th class="h-rot h-visit col-movable" data-col-key="visit"><span class="inner">訪問日</span></th>
         <th class="h-rot col-movable" data-col-key="monita"><span class="inner">モニ記録</span></th>
         <th class="h-rot col-movable" data-col-key="sikien"><span class="inner">支援経過</span></th>
@@ -1383,8 +1384,8 @@ const BASE_MOVABLE_COLUMN_KEYS = ['yuko', 'level', 'planL', 'planS', 'visit', 'm
 const DEFAULT_COLUMN_LABELS = {
   yuko: '有効期間',
   level: '介護度',
-  planL: '長期',
-  planS: '短期',
+  planL: '長期目標',
+  planS: '短期目標',
   visit: '訪問日',
   monita: 'モニ記録',
   sikien: '支援経過',
@@ -1965,8 +1966,8 @@ function esc(value) {
 
 function getPeriodFieldLabel(field) {
   if (field === 'yuko') return '有効期間';
-  if (field === 'planL') return '長期';
-  if (field === 'planS') return '短期';
+  if (field === 'planL') return getColumnLabel('planL');
+  if (field === 'planS') return getColumnLabel('planS');
   return getCustomColumn(field)?.label || '短期';
 }
 
