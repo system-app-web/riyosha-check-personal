@@ -3455,7 +3455,8 @@ function openRowReorderModal() {
   renderRowReorderModal();
 }
 
-function renderRowReorderModal() {
+function renderRowReorderModal(keepScroll) {
+  const previousScrollTop = keepScroll ? (document.querySelector('.reorder-list')?.scrollTop || 0) : 0;
   const rows = getVisibleRowItems();
   showModal('利用者編集', '',
     `<div class="editor-actions">
@@ -3474,6 +3475,10 @@ function renderRowReorderModal() {
     </div>`
   );
   document.getElementById('modal').classList.add('compact-picker');
+  if (keepScroll) {
+    const list = document.querySelector('.reorder-list');
+    if (list) list.scrollTop = previousScrollTop;
+  }
 }
 
 function toggleRowEditorReorderMode() {
@@ -3499,12 +3504,12 @@ function tapRowReorder(rowId) {
   if (!rowEditorReorderMode) return;
   if (!selectedRowReorderId) {
     selectedRowReorderId = rowId;
-    renderRowReorderModal();
+    renderRowReorderModal(true);
     return;
   }
   if (selectedRowReorderId === rowId) {
     selectedRowReorderId = '';
-    renderRowReorderModal();
+    renderRowReorderModal(true);
     return;
   }
   const rows = getVisibleRowItems();
@@ -3519,7 +3524,7 @@ function tapRowReorder(rowId) {
   updateManualOrderFromVisibleRows(nextRows);
   saveMonthData(curYear, curMonth, currentData);
   selectedRowReorderId = '';
-  renderRowReorderModal();
+  renderRowReorderModal(true);
   render();
 }
 
