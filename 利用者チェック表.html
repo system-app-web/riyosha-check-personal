@@ -568,6 +568,7 @@ th[data-col-key="level"] { width: 32px; vertical-align: middle; padding: 0; }
 th.h-rot-date { width: 60px; vertical-align: middle; padding: 0; }
 th.h-visit { width: 44px; }
 th.h-seho { width: 44px; }
+th[data-custom-col="1"] { width: 44px; }
 th[data-col-key="monita"],
 th[data-col-key="sikien"],
 th[data-col-key="drive"],
@@ -796,6 +797,7 @@ td.td-visit.is-selected {
 }
 td.td-cc { cursor: pointer; width: 58px; user-select: none; text-align: center; vertical-align: middle; }
 td.td-seho { width: 58px; cursor: pointer; padding: 2px 2px; text-align: center; vertical-align: middle; }
+td.td-custom-col { width: 58px; }
 td.td-biko {
   text-align: left;
   display: table-cell;
@@ -1187,6 +1189,7 @@ td.td-biko {
   th.h-rot-date { width: 56px; }
   th.h-visit { width: 42px; }
   th.h-seho { width: 42px; }
+  th[data-custom-col="1"] { width: 42px; }
   th[data-col-key="monita"],
   th[data-col-key="sikien"],
   th[data-col-key="drive"],
@@ -1203,6 +1206,7 @@ td.td-biko {
   td.td-visit { width: 56px; }
   td.td-cc { width: 56px; }
   td.td-seho { width: 56px; }
+  td.td-custom-col { width: 56px; }
   td.td-biko { min-width: 150px; padding: 0; font-size: 9px; }
   .circle { width: 22px; height: 22px; font-size: 11px; }
   .name-kana { font-size: 7px; }
@@ -3999,7 +4003,7 @@ function render() {
         const td = document.createElement('td');
         const value = Number(getFieldValue(item, column.key)) === 1 ? 1 : 0;
         td.dataset.colKey = column.key;
-        td.className = 'td-cc';
+        td.className = 'td-cc td-custom-col';
         td.innerHTML = `<span class="circle ${value === 1 ? 'on' : 'off'}">${value === 1 ? '✓' : '○'}</span>`;
         td.addEventListener('dblclick', event => {
           event.stopPropagation();
@@ -4010,7 +4014,7 @@ function render() {
       }
       const td = document.createElement('td');
       td.dataset.colKey = column.key;
-      td.className = 'td-date';
+      td.className = 'td-date td-custom-col';
       td.textContent = shortDate(getFieldValue(item, column.key) || '');
       bindDateCell(td, () => openPeriodDatePicker(originalIndex, column.key, column.label));
       columnCells[column.key] = td;
