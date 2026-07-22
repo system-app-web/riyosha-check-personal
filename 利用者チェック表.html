@@ -252,6 +252,99 @@ input, textarea, select, option {
   font-family: inherit;
   cursor: pointer;
 }
+.office-check-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 8px 0 14px;
+}
+.office-check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1.5px solid #b3e89a;
+  border-radius: 10px;
+  background: #f9fef5;
+  width: min(100%, 228px);
+  box-sizing: border-box;
+}
+.office-check-name {
+  flex: 1;
+  min-width: 0;
+  color: #1a4d0e;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.office-check-mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.6px solid #65b842;
+  background: white;
+  color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  flex: none;
+}
+.office-check-mark.is-on {
+  background: #3a9e20;
+  color: white;
+  box-shadow: 0 2px 8px rgba(58,158,32,0.25);
+}
+.office-check-actions {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+.office-mini-btn {
+  height: 22px;
+  min-width: 34px;
+  padding: 0 6px;
+  border-radius: 999px;
+  border: 1px solid #b3e89a;
+  background: #edf9e7;
+  color: #2d7a1a;
+  font-size: 9px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.office-mini-btn.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+.office-empty-note {
+  padding: 9px 10px;
+  border: 1.5px dashed #b3e89a;
+  border-radius: 10px;
+  background: #f9fef5;
+  color: #64748b;
+  font-size: 11px;
+  text-align: center;
+  width: min(100%, 228px);
+  box-sizing: border-box;
+}
+.office-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.office-modal-actions .mact {
+  width: 100%;
+  margin: 0 !important;
+}
 .editor-action-btn {
   width: 100%;
   min-width: 0;
@@ -835,6 +928,34 @@ td.td-biko {
 .modal-bg.column-editor-picker .modal-close {
   margin-top: 10px;
 }
+.modal-bg.fax-office-picker { align-items: center; padding: 16px; }
+.modal-bg.fax-office-picker .modal {
+  border-radius: 16px;
+  width: min(92vw, 380px);
+  max-width: 380px;
+  max-height: none;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.modal-bg.fax-office-picker .modal-name {
+  font-size: 15px;
+  margin-bottom: 10px;
+}
+.modal-bg.fax-office-picker .macts {
+  display: block;
+  width: 100%;
+}
+.modal-bg.fax-office-picker .modal-close {
+  margin-top: 10px;
+}
+.modal-bg.fax-office-picker .office-modal-actions {
+  width: 100%;
+}
+.modal-bg.fax-office-picker .office-modal-actions .mact {
+  width: 100%;
+  display: block;
+  flex: none;
+}
 .modal-bg.calendar-picker { align-items: center; padding: 8px 12px; }
 .modal-bg.calendar-picker .modal {
   border-radius: 16px;
@@ -1342,6 +1463,7 @@ function newClientData(base) {
     drive: base.drive || 0,
     hand: base.hand || 0,
     fax: base.fax || 0,
+    faxOffices: normalizeFaxOffices(base.faxOffices),
     plan: base.plan || 0,
     meeting: base.meeting || 0,
     shokai: base.shokai || 0,
@@ -1355,6 +1477,36 @@ function normalizeCustomFieldValues(value) {
   return Object.fromEntries(Object.entries(value).map(([key, fieldValue]) => [key, fieldValue ?? '']));
 }
 
+function normalizeFaxOffices(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(item => ({
+      id: String(item.id || '').trim() || makeOfficeId(),
+      name: String(item.name || '').trim(),
+      checked: Number(item.checked) === 1 || item.checked === true
+    }))
+    .filter(item => item.name);
+}
+
+function makeOfficeId() {
+  return `office_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function syncFaxDone(item) {
+  item.faxOffices = normalizeFaxOffices(item.faxOffices);
+  item.fax = item.faxOffices.length > 0 && item.faxOffices.every(office => office.checked) ? 1 : 0;
+}
+
+function isFaxComplete(item) {
+  const offices = normalizeFaxOffices(item?.faxOffices);
+  return offices.length > 0 && offices.every(office => office.checked);
+}
+
+function isCheckComplete(item, key) {
+  if (key === 'fax') return isFaxComplete(item);
+  return item[key] === 1;
+}
+
 function parseVisitState(base) {
   const raw = String(base.visit || '').trim();
   return {
@@ -1366,6 +1518,8 @@ function parseVisitState(base) {
 
 function normalizeSehoFields(item) {
   if (item.sehoCw && !item.seho) item.seho = '○';
+  item.faxOffices = normalizeFaxOffices(item.faxOffices);
+  syncFaxDone(item);
   return item;
 }
 
@@ -1797,6 +1951,7 @@ function syncClientList(data) {
       sehoCw: existing.sehoCw !== undefined ? existing.sehoCw : (base.sehoCw || ''),
       kaigoken: existing.kaigoken !== undefined ? existing.kaigoken : (base.kaigoken || ''),
       biko: existing.biko !== undefined ? existing.biko : (base.biko || ''),
+      faxOffices: normalizeFaxOffices(existing.faxOffices),
       customFields: normalizeCustomFieldValues(existing.customFields)
     });
   });
@@ -1840,6 +1995,7 @@ function getMonthData(y, m) {
       drive: 0,
       hand: 0,
       fax: 0,
+      faxOffices: normalizeFaxOffices(c.faxOffices).map(office => ({ ...office, checked: false })),
       plan: 0,
       meeting: 0,
       shokai: 0,
@@ -2084,10 +2240,115 @@ function setOrderMode(mode) {
 }
 
 function tog(i, key) {
+  if (key === 'fax') {
+    openFaxOfficeChecklist(i);
+    return;
+  }
   const current = getFieldValue(currentData[i], key);
   setFieldValue(currentData[i], key, current === 1 ? 0 : 1);
   saveMonthData(curYear, curMonth, currentData);
   render();
+}
+
+function openFaxOfficeChecklist(i) {
+  modalIndex = i;
+  const item = currentData[i];
+  item.faxOffices = normalizeFaxOffices(item.faxOffices);
+  syncFaxDone(item);
+  const rows = item.faxOffices.length
+    ? item.faxOffices.map(office => `
+      <div class="office-check-row">
+        <div class="office-check-name">${esc(office.name)}</div>
+        <button class="office-check-mark${office.checked ? ' is-on' : ''}" ondblclick="toggleFaxOffice('${esc(office.id)}')">${office.checked ? '✓' : '○'}</button>
+        <div class="office-check-actions">
+          <button class="office-mini-btn" onclick="openFaxOfficeEdit('${esc(office.id)}')">編集</button>
+          <button class="office-mini-btn danger" onclick="deleteFaxOffice('${esc(office.id)}')">削除</button>
+        </div>
+      </div>`).join('')
+    : '<div class="office-empty-note">事業所を追加してください</div>';
+  showModal('次月提供票', item.name,
+    `<div class="office-check-list">${rows}</div>
+     <div class="office-modal-actions">
+       <button class="mact green" onclick="openFaxOfficeAdd()">追加</button>
+       <button class="mact green" onclick="closeModal();render();">OK</button>
+     </div>`
+  );
+  document.getElementById('modal').classList.add('fax-office-picker');
+}
+
+function saveFaxOfficeState() {
+  const item = currentData[modalIndex];
+  if (!item) return;
+  item.faxOffices = normalizeFaxOffices(item.faxOffices);
+  syncFaxDone(item);
+  saveMonthData(curYear, curMonth, currentData);
+}
+
+function toggleFaxOffice(id) {
+  const item = currentData[modalIndex];
+  if (!item) return;
+  item.faxOffices = normalizeFaxOffices(item.faxOffices).map(office =>
+    office.id === id ? { ...office, checked: !office.checked } : office
+  );
+  saveFaxOfficeState();
+  render();
+  openFaxOfficeChecklist(modalIndex);
+}
+
+function openFaxOfficeAdd() {
+  showModal('事業所追加', currentData[modalIndex]?.name || '',
+    `<input class="modal-input" id="fax-office-name" placeholder="事業所名">
+     <button class="mact green" style="width:100%;margin-top:8px" onclick="saveFaxOfficeAdd()">追加する</button>`
+  );
+  document.getElementById('modal').classList.add('compact-picker');
+  setTimeout(() => document.getElementById('fax-office-name')?.focus(), 100);
+}
+
+function saveFaxOfficeAdd() {
+  const name = (document.getElementById('fax-office-name')?.value || '').trim();
+  if (!name) {
+    alert('事業所名を入力してください');
+    return;
+  }
+  const item = currentData[modalIndex];
+  item.faxOffices = [...normalizeFaxOffices(item.faxOffices), { id: makeOfficeId(), name, checked: false }];
+  saveFaxOfficeState();
+  openFaxOfficeChecklist(modalIndex);
+}
+
+function openFaxOfficeEdit(id) {
+  const item = currentData[modalIndex];
+  const office = normalizeFaxOffices(item?.faxOffices).find(entry => entry.id === id);
+  if (!office) return;
+  showModal('事業所編集', currentData[modalIndex]?.name || '',
+    `<input class="modal-input" id="fax-office-name" placeholder="事業所名" value="${esc(office.name)}">
+     <button class="mact green" style="width:100%;margin-top:8px" onclick="saveFaxOfficeEdit('${esc(id)}')">保存する</button>`
+  );
+  document.getElementById('modal').classList.add('compact-picker');
+  setTimeout(() => document.getElementById('fax-office-name')?.focus(), 100);
+}
+
+function saveFaxOfficeEdit(id) {
+  const name = (document.getElementById('fax-office-name')?.value || '').trim();
+  if (!name) {
+    alert('事業所名を入力してください');
+    return;
+  }
+  const item = currentData[modalIndex];
+  item.faxOffices = normalizeFaxOffices(item.faxOffices).map(office =>
+    office.id === id ? { ...office, name } : office
+  );
+  saveFaxOfficeState();
+  openFaxOfficeChecklist(modalIndex);
+}
+
+function deleteFaxOffice(id) {
+  const item = currentData[modalIndex];
+  if (!item) return;
+  item.faxOffices = normalizeFaxOffices(item.faxOffices).filter(office => office.id !== id);
+  saveFaxOfficeState();
+  render();
+  openFaxOfficeChecklist(modalIndex);
 }
 
 function openVisit(i) {
@@ -3337,7 +3598,7 @@ function showModal(col, name, html) {
 }
 
 function closeModal() {
-  document.getElementById('modal').classList.remove('show', 'add-client', 'compact-picker', 'calendar-picker', 'visit-calendar-open', 'column-editor-picker');
+  document.getElementById('modal').classList.remove('show', 'add-client', 'compact-picker', 'calendar-picker', 'visit-calendar-open', 'column-editor-picker', 'fax-office-picker');
   datePickerField = '';
 }
 
@@ -3602,7 +3863,7 @@ function render() {
     const tr = document.createElement('tr');
     tr.dataset.sourceIndex = String(originalIndex);
     tr.dataset.rowId = item.rowId || '';
-    if (CHK.every(key => item[key] === 1)) tr.classList.add('done-row');
+    if (CHK.every(key => isCheckComplete(item, key))) tr.classList.add('done-row');
     if (selectedRowId && selectedRowId === (item.rowId || '')) tr.classList.add('row-selected');
     bindRowTapSelection(tr);
 
@@ -3691,10 +3952,12 @@ function render() {
       const td = document.createElement('td');
       td.dataset.colKey = key;
       td.className = 'td-cc';
-      td.innerHTML = `<span class="circle ${item[key] === 1 ? 'on' : 'off'}">${item[key] === 1 ? '✓' : '○'}</span>`;
+      const done = isCheckComplete(item, key);
+      td.innerHTML = `<span class="circle ${done ? 'on' : 'off'}">${done ? '✓' : '○'}</span>`;
       td.addEventListener('dblclick', event => {
         event.stopPropagation();
-        tog(originalIndex, key);
+        if (key === 'fax') openFaxOfficeChecklist(originalIndex);
+        else tog(originalIndex, key);
       });
       columnCells[key] = td;
     });
